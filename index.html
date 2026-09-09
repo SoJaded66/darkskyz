@@ -91,26 +91,24 @@
 (function () {
   /* ==================================================================
      CONFIG — the only part you edit.
-     ==================================================================
 
-     CHANNEL_ID is the important one on iPhone. The YouTube iOS app can
-     only follow a handful of link shapes, and "@handle/live" is NOT one
-     of them — but "channel/UC..." is. Get yours from:
-        YouTube Studio → Settings → Channel → Advanced settings
-     It starts with UC and is 24 characters.
+     CHANNEL_ID is what makes the iPhone button work. The YouTube iOS app
+     only follows a few link shapes, and "@handle/live" is not one of them,
+     but "channel/UC..." is. Yours is below. Verify it against:
+        YouTube Studio -> Settings -> Channel -> Advanced settings
 
-     Set VIDEO_ID when you are pushing one specific video or stream —
-     that is the most reliable deep link of all.
+     VIDEO_ID is optional. Set it when pushing one specific stream or video
+     -- that is the strongest deep link, dropping people straight into the
+     player with chat, instead of onto the channel page.
      ================================================================== */
 
   var HANDLE     = 'darkskyz66';
-  var CHANNEL_ID = '';   // e.g. 'UCnopZVhftJEs8pHa_vpGFDw'  ← paste yours here
-  var VIDEO_ID   = '';   // optional, 11 chars, e.g. 'dQw4w9WgXcQ'
-  var AUTO_TRY   = true; // attempt the app automatically on load
+  var CHANNEL_ID = 'UCnopZVhftJEs8pHa_vpGFDw';
+  var VIDEO_ID   = '';
+  var AUTO_TRY   = true;
 
   /* ================================================================== */
 
-  // Where a normal browser should end up.
   var WEB = VIDEO_ID
     ? 'https://www.youtube.com/watch?v=' + VIDEO_ID
     : 'https://www.youtube.com/@' + HANDLE + '/live';
@@ -120,16 +118,12 @@
               (/Macintosh/.test(ua) && typeof document.ontouchend !== 'undefined');
   var isAndroid = /Android/.test(ua);
 
-  // ---- Build the app link -------------------------------------------------
-  // iOS understands: youtube://watch?v=ID  and  youtube://channel/UC...
-  // It does NOT understand @handle paths, which is why those silently fail.
+  // Build the app link.
   var APP_URL = '';
   if (isIOS) {
     if (VIDEO_ID)        APP_URL = 'youtube://watch?v=' + VIDEO_ID;
     else if (CHANNEL_ID) APP_URL = 'youtube://channel/' + CHANNEL_ID;
-    else                 APP_URL = '';   // nothing reliable to send — use the web link
   } else if (isAndroid) {
-    // Android's intent syntax handles the real URL, handles and all.
     var path = VIDEO_ID
       ? 'www.youtube.com/watch?v=' + VIDEO_ID
       : 'www.youtube.com/@' + HANDLE + '/live';
@@ -141,17 +135,16 @@
   webBtn.setAttribute('href', WEB);
   appBtn.setAttribute('href', APP_URL || WEB);
 
-  // Desktop, or iOS with no CHANNEL_ID set: one button, straight to the web.
+  // Desktop, or a phone with nothing valid to open: one button, straight to web.
   if (!APP_URL) {
     appBtn.innerHTML = 'Watch DARKSKYZ Radio<small>Opens youtube.com</small>';
     webBtn.style.display = 'none';
   }
 
-  /* ---- Fallback ----------------------------------------------------------
-     If the app opens, this page goes into the background. So at the moment
-     the timer fires we simply ask: is this page still on screen? If yes, the
-     app never opened — send them to the web player. No sticky flags, nothing
-     that can get stuck in a "already launched" state. */
+  /* Fallback: if the app opens, this page goes into the background. So when
+     the timer fires we just ask whether the page is still on screen. If it is,
+     the app never took the link -- send them to the web player. No sticky
+     flags that can jam in an "already launched" state. */
   var timer = null;
 
   document.addEventListener('visibilitychange', function () {
@@ -168,7 +161,7 @@
     if (timer) clearTimeout(timer);
     timer = setTimeout(function () {
       timer = null;
-      if (!document.hidden) window.location.href = WEB;  // app didn't take it
+      if (!document.hidden) window.location.href = WEB;
     }, 1500);
 
     window.location.href = APP_URL;
@@ -177,18 +170,18 @@
   appBtn.addEventListener('click', go);
 
   // Auto-attempt once. In-app browsers often block a jump with no tap behind
-  // it — that is what the button is for, so a blocked auto-try costs nothing.
+  // it -- that is what the button is for, so a blocked auto-try costs nothing.
   if (AUTO_TRY && APP_URL) {
     setTimeout(function () { if (!document.hidden) go(null); }, 300);
   }
 
-  /* ---- Diagnostics: add ?debug=1 to the URL ---------------------------- */
+  /* Diagnostics: add ?debug=1 to the URL */
   if (/[?&]debug=1/.test(location.search)) {
     var d = document.getElementById('debug');
     d.style.display = 'block';
     d.innerHTML =
       '<b>platform</b><br>' + (isIOS ? 'iOS' : isAndroid ? 'Android' : 'desktop / other') + '<br><br>' +
-      '<b>app link</b><br>' + (APP_URL || '(none — set CHANNEL_ID)') + '<br><br>' +
+      '<b>app link</b><br>' + (APP_URL || '(none - CHANNEL_ID is empty)') + '<br><br>' +
       '<b>web link</b><br>' + WEB + '<br><br>' +
       '<b>user agent</b><br>' + ua;
   }
